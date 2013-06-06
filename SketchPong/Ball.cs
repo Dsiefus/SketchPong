@@ -42,21 +42,27 @@ namespace sketchPong
                 rotation = 0;
         }
 
+        private void UpdateBounds()
+        {
+            Vector3 spherePosition = new Vector3(position.X + (texture.Width / 2), position.Y + (texture.Height / 2), 0);
+            bounds = new BoundingSphere(spherePosition, 20);
+        }
         public void LoadContent(ContentManager content, String text)
         {
             texture = content.Load<Texture2D>(text);
-
-            bounds = new BoundingSphere(new Vector3(position.X + (texture.Width / 2), position.Y + (texture.Height / 2), 0), 20);
+            UpdateBounds();
         }
 
-        public void MoveToRight()
+        public float MoveToRight()
         {
             speed.X = Math.Min(Math.Abs(speed.X * 1.15f), MaxSpeed);
+            return speed.X;
         }
 
-        public void MoveToLeft()
+        public float MoveToLeft()
         {
             speed.X = -Math.Abs(Math.Max(-speed.X * 1.15f,-MaxSpeed));
+            return speed.X;
         }
         
         public BoundingSphere getBoundingSphere() { return bounds; }
@@ -67,12 +73,21 @@ namespace sketchPong
             speed = new Vector2(0);
         }
 
-        public void IncreaseSpeed(Vector2 inc)
+        public Vector2 IncreaseSpeed(Vector2 inc)
         {
             speed += inc;
+            speed.X = Math.Max(Math.Min(speed.X, MaxSpeed),-MaxSpeed);
+            speed.Y = Math.Max(Math.Min(speed.Y, MaxSpeed), -MaxSpeed);
+           
+            return speed;
         }
 
-        public void SetSpeed(Vector2 newspeed) { speed = newspeed; }
+        public void SetSpeed(Vector2 newspeed)
+        {
+            speed = newspeed;
+            speed.X = Math.Max(Math.Min(speed.X, MaxSpeed), -MaxSpeed);
+            speed.Y = Math.Max(Math.Min(speed.Y, MaxSpeed), -MaxSpeed);
+        }
 
         public Vector2 GetPosition()
         {
@@ -97,7 +112,7 @@ namespace sketchPong
         public void Update(double elapsed)
         {
             position+= (speed * (float)(elapsed));
-            bounds = new BoundingSphere(new Vector3(position.X + (texture.Width / 2), position.Y + (texture.Height / 2), 0), 20);
+            UpdateBounds();
         }
 
         public void Draw(SpriteBatch spriteBatch)

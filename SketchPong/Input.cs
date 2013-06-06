@@ -22,7 +22,7 @@ namespace sketchPong
         public bool PressStart
         {
             get
-            {
+            {                
                 return keyboardState.IsKeyDown(Keys.Enter) && lastState.IsKeyUp(Keys.Enter);
             }
         }

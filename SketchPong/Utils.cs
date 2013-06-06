@@ -50,22 +50,22 @@ namespace sketchPong
                 Color[] pixelsB = new Color[texPixelDimensionsB];
                 texB.GetData<Color>(0, null, pixelsB, 0, texPixelDimensionsB);
 
-                int x1 = (int)Math.Max(boundsA.Min.X, boundsB.Min.X);
-                int x2 = (int)Math.Min(boundsA.Max.X, boundsB.Max.X);
+                int maxX = (int)Math.Max(boundsA.Min.X, boundsB.Min.X);
+                int minX = (int)Math.Min(boundsA.Max.X, boundsB.Max.X);
 
-                int y1 = (int)Math.Max(boundsA.Min.Y, boundsB.Min.Y);
-                int y2 = (int)Math.Min(boundsA.Max.Y, boundsB.Max.Y);
+                int maxY = (int)Math.Max(boundsA.Min.Y, boundsB.Min.Y);
+                int minY = (int)Math.Min(boundsA.Max.Y, boundsB.Max.Y);
 
-                for (int y = y1; y < y2; ++y)
+                for (int y = maxY; y < minY; ++y)
                 {
-                    for (int x = x1; x < x2; ++x)
+                    for (int x = maxX; x < minX; ++x)
                     {
                         if ((pixelsA[(x - (int)boundsA.Min.X) + (y - (int)boundsA.Min.Y) * texA.Width] != Color.Transparent) &&
                             (pixelsB[(x - (int)boundsB.Min.X) + (y - (int)boundsB.Min.Y) * texB.Width] != Color.Transparent))
                         {
                             collision = true;
-                            x = x2;
-                            y = y2;
+                            x = minX;
+                            y = minY;
                         }
                     }
                 }

@@ -34,14 +34,15 @@ namespace sketchPong
         GameState gameState = new GameState();
 
         Timer GameTimer,GoalTimer; //Timers para el tiempo de juego, tiempo que mostrar mensaje de gol
-        Timer InvTimer,NewItemTimer,DoublerTimer; //tiempo de invertir controles, de que aparezca nuevo item, de valor doble de goles
+        Timer InvTimer,NewItemTimer,DoublerTimer; 
         Timer LargerBarTimer;
 
         ItemType itemType;
        
         SpriteFont gamefont;
         Texture2D paddlePlayer, paddleEnemy, background, frontend, title, logo,Item;
-        Vector2 positionPlayer, positionEnemy, positionBall, positionTitle, positionLogo, positionScore, positionStart,positionTime, positionTemporal,positionMessage,positionPause;
+        Vector2 positionPlayer, positionEnemy, positionBall, positionTitle, positionLogo;
+        Vector2 positionScore, positionStart,positionTime, positionTemporal,positionMessage,positionPause;
         Vector2 positionWinnerMessage, positionFinalMessage, positionFinalMessage2,positionItem;
        
         BoundingBox boundsPlayer, boundsEnemy;
@@ -53,9 +54,7 @@ namespace sketchPong
         Ball ball;
         Input input;
         //****************************************
-
-
-        int scorePlayer, scoreEnemy;
+                
         Random rand = new Random(DateTime.Now.Millisecond);
 
         public skPongGame()
@@ -73,65 +72,80 @@ namespace sketchPong
             Window.Title = "Sketch Pong";            
             gameState = GameState.NONE;
 
+            InitPositions();
 
-            //posicion en pantalla de los diferentes elementos
-            positionPlayer = new Vector2(50,340);
-            positionEnemy = new Vector2(1170,330);
-            positionBall = new Vector2(600,360); 
-            positionTitle = new Vector2(300,160); 
-            positionLogo = new Vector2(420,200); 
-            positionScore = new Vector2(540,0);
-            positionStart = new Vector2(480,360);
-            positionTime = new Vector2(470, 70); 
-            positionMessage = new Vector2(540, 220); 
-            positionPause = new Vector2(460, 300);
-            positionWinnerMessage = new Vector2(200,220);
-            positionFinalMessage = new Vector2(125,300);
-            positionFinalMessage2 = new Vector2(250,370);
-            positionTemporal  = new Vector2(540, 150); 
-            positionItem = new Vector2(rand.Next(100, 1100), rand.Next(150,600));
-
-           
-            //Diferentes timers con sus handlers para cuando termina cada uno
-            GameTimer = new Timer(1000); //inicializamos timers a 1 segundo
-            GameTimer.Elapsed += new ElapsedEventHandler(GameTimer_Elapsed); //funcion a ejecutar cada segundo del timer
-            GoalTimer = new Timer(1000);
-            GoalTimer.Elapsed += new ElapsedEventHandler(GoalTimer_Elapsed);
-            GoalTimer.AutoReset = false; //ponemos el AutoReset a false, de manera que solo se ejecutara 1 vez la funcion
-                                         //cada vez que iniciermos el Timer
-
-            InvTimer = new Timer(5000); //Item de invertir controles, durante 5 segundos
-            InvTimer.Elapsed += new ElapsedEventHandler(InvTimer_Elapsed);
-            InvTimer.AutoReset = false;
-
-            DoublerTimer = new Timer(15000);
-            DoublerTimer.Elapsed += new ElapsedEventHandler(DoublerTimer_Elapsed);
-            DoublerTimer.AutoReset = false;        
-
-            LargerBarTimer = new Timer(25000);
-            LargerBarTimer.Elapsed += new ElapsedEventHandler(LargerBarTimer_Elapsed);
-            LargerBarTimer.AutoReset = false;
-
-            NewItemTimer = new Timer(1000);
-            NewItemTimer.Elapsed += new ElapsedEventHandler(NewItemTimer_Elapsed);
-            NewItemTimer.AutoReset = false;
-            
-            scorePlayer = 0;
-            scoreEnemy = 0;
+            InitTimers();            
 
             //****************************************
             Enemy = new Paddle(400,new Vector2(1170,330));
-            Player = new Paddle(520,new Vector2(50,340));
+            Player = new Paddle(520,new Vector2(40,340));
             Player.setVisible(true);
             Enemy.setVisible(true);
             ball = new Ball();
             input = new Input();
-            //****************************************
-            
+            //****************************************            
                         
             base.Initialize();
         }
 
+        private void InitPositions()
+        {
+            //posicion en pantalla de los diferentes elementos
+            positionPlayer = new Vector2(50, 340);
+            positionEnemy = new Vector2(1170, 330);
+            positionBall = new Vector2(600, 360);
+            positionTitle = new Vector2(300, 160);
+            positionLogo = new Vector2(420, 200);
+            positionScore = new Vector2(540, 0);
+            positionStart = new Vector2(480, 360);
+            positionTime = new Vector2(470, 70);
+            positionMessage = new Vector2(540, 220);
+            positionPause = new Vector2(460, 300);
+            positionWinnerMessage = new Vector2(200, 220);
+            positionFinalMessage = new Vector2(125, 300);
+            positionFinalMessage2 = new Vector2(250, 370);
+            positionTemporal = new Vector2(540, 150);
+            positionItem = new Vector2(rand.Next(100, 1100), rand.Next(150, 600));
+        }
+
+        private void InitTimers()
+        {
+            //Diferentes timers con sus handlers para cuando termina cada uno
+            GameTimer = InitializeTimer(1000, GameTimer_Elapsed); //inicializamos timers a 1 segundo
+            GameTimer.AutoReset = true;
+
+            GoalTimer = InitializeTimer(1000, GoalTimer_Elapsed);
+
+            InvTimer = InitializeTimer(5000,InvTimer_Elapsed); //Item de invertir controles, durante 5 segundos
+
+            DoublerTimer = InitializeTimer(15000, DoublerTimer_Elapsed);
+
+            LargerBarTimer = InitializeTimer(25000, LargerBarTimer_Elapsed);
+
+            NewItemTimer = InitializeTimer(1000, NewItemTimer_Elapsed);            
+        }
+
+        private Timer InitializeTimer(int time, Action<object,ElapsedEventArgs> handler)
+        {
+            Timer timer=new Timer(time);
+            timer.Elapsed += new ElapsedEventHandler(handler);
+            //ponemos el AutoReset a false, de manera que solo se ejecutara 1 vez la funcion
+            timer.AutoReset = false; 
+            //cada vez que iniciermos el Timer
+            return timer;
+        }
+
+        private bool PlayerMovingUp(KeyboardState keyState)
+        {
+            return (((keyState.IsKeyDown(Keys.W) && !inv_controls) || (keyState.IsKeyDown(Keys.S) && inv_controls)) &&
+                   (boundsPlayer.Min.Y > 20));
+        }
+
+        private bool PlayerMovingDown(KeyboardState keyState)
+        {
+            return (((keyState.IsKeyDown(Keys.S) && !inv_controls) || (keyState.IsKeyDown(Keys.W) && inv_controls)) && 
+                    (boundsPlayer.Max.Y < (Window.ClientBounds.Height - 30)));
+        }
 
         //funcion principal
         protected override void Update(GameTime gameTime)
@@ -145,8 +159,7 @@ namespace sketchPong
             switch (gameState)
             {
                 case GameState.NONE: 
-                    {
-                        gameState = GameState.LOGO;  
+                    {    gameState = GameState.LOGO;  
                     } break;
                 case GameState.LOGO:
                     { //mostrar logo 1 segundo
@@ -164,17 +177,12 @@ namespace sketchPong
                     } break;
                 case GameState.GAME: 
                     {
-                        if (!inv_controls)
-                        {
-                            if (keyState.IsKeyDown(Keys.W) && (boundsPlayer.Min.Y > 20)) Player.MoveUp(elapsedTime.TotalSeconds);
-                            if (keyState.IsKeyDown(Keys.S) && (boundsPlayer.Max.Y < (Window.ClientBounds.Height - 30))) Player.MoveDown(elapsedTime.TotalSeconds);
-                        }
-                        else
-                        {
-                            if (keyState.IsKeyDown(Keys.S) && (boundsPlayer.Min.Y > 20)) Player.MoveUp(elapsedTime.TotalSeconds);
-                            if (keyState.IsKeyDown(Keys.W) && (boundsPlayer.Max.Y < (Window.ClientBounds.Height - 30))) Player.MoveDown(elapsedTime.TotalSeconds);
-                        }   
-
+                        
+                        if(PlayerMovingUp(keyState))
+                            Player.MoveUp(elapsedTime.TotalSeconds);
+                        if(PlayerMovingDown(keyState))
+                            Player.MoveDown(elapsedTime.TotalSeconds);
+                         
                         //Si la bola esta acercandose al enemigo y a cierta distancia, activamos la IA del enemigo
                         if (ball.GetPosition().X > 600 && ball.GetSpeed().X>0)
                             Enemy.EnemyIA(ball,elapsedTime.TotalSeconds,Window.ClientBounds.Width,Window.ClientBounds.Height);
@@ -187,26 +195,15 @@ namespace sketchPong
                        boundsBall = ball.getBoundingSphere();
 
                         if (boundsPlayer.Intersects(boundsBall))
-                        {
-                            //para arreglar el bug, cuando rebota con el Player, hacemos que sea siempre positiva la velocidad
-                            //aun puede passar que se acelere un poco al rebotar más de una vez dentro                                                     
-                            
+                        {  
                             ball.MoveToRight();
                             //aumentar la velocidad en el eje Y en la direccion del movimiento de la barra
-                            if (!inv_controls)
-                            {
-                                if (keyState.IsKeyDown(Keys.W) && (boundsPlayer.Min.Y > 20))                                    
-                                    ball.IncreaseSpeed(new Vector2(0, - Math.Max(Math.Abs(ball.GetSpeedY()) * 0.2f, 0.3f)));
-                                if (keyState.IsKeyDown(Keys.S) && (boundsPlayer.Max.Y < (Window.ClientBounds.Height - 30)))
-                                    ball.IncreaseSpeed(new Vector2(0, Math.Max(Math.Abs(ball.GetSpeedY()) * 0.2f, 0.3f)));
-                            }
-                            else
-                            {
-                                if (keyState.IsKeyDown(Keys.S) && (boundsPlayer.Min.Y > 20))
-                                    ball.IncreaseSpeed(new Vector2(0, -Math.Max(Math.Abs(ball.GetSpeedY()) * 0.2f, 0.3f)));
-                                if (keyState.IsKeyDown(Keys.W) && (boundsPlayer.Max.Y < (Window.ClientBounds.Height - 30)))
-                                    ball.IncreaseSpeed(new Vector2(0, +Math.Max(Math.Abs(ball.GetSpeedY()) * 0.2f, 0.3f)));
-                            }
+                            
+                            if (PlayerMovingUp(keyState))                                 
+                                ball.IncreaseSpeed(new Vector2(0, - Math.Max(Math.Abs(ball.GetSpeedY()) * 0.2f, 0.3f)));
+                            if (PlayerMovingDown(keyState))
+                                ball.IncreaseSpeed(new Vector2(0, Math.Max(Math.Abs(ball.GetSpeedY()) * 0.2f, 0.3f)));
+                         
                             player_last_hit = true; //player ultimo en golpear
                         }                     
                         
@@ -217,102 +214,21 @@ namespace sketchPong
                         }
 
                         //gol del enemigo
-                        if (boundsBall.Center.X < 50) 
-                        {
-                            //havescore = alguien ha marcado. Activamos el GoalTimer, que hara que se muestre un mensaje 
-                            //por pantalla durante 1 segundo
-                            HaveScored = true;
-                            GoalTimer.Start();
-                           
-                            //la bola saldra hacia el Player  
-                            ball.Reset(true);
-                            if (doubler_active)                                
-                                Enemy.IncrementPoints(2);                                
-                            else
-                                Enemy.IncrementPoints();        
-                                                       
-                            Player.setConsecutiveGoals(0);
-                            //limite de puntos del juego
-                            if (Enemy.GetPoints() >= MaximumGoals)
-                            {
-                                player_wins = false;
-                                gameState = GameState.END;
-                            }
-
-                        }
+                        if (boundsBall.Center.X < 50)
+                            Score(Enemy);
+                                             
                         //gol del jugador
-                        if (boundsBall.Center.X > (Window.ClientBounds.Width - 50)) 
-                        {
-                            //identico al anterior pero al reves
-                            HaveScored = true;
-                            GoalTimer.Start();                        
-                            ball.Reset(false);
-                           
-                            if (doubler_active)                                                                  
-                              Player.IncrementPoints(2);
-                            else
-                              Player.IncrementPoints();
-                           
-                            Enemy.setConsecutiveGoals(0);
-                            if (Player.GetPoints() >= MaximumGoals)
-                            {
-                                player_wins = true;
-                                gameState = GameState.END;
-                            }
-                        }
+                        if (boundsBall.Center.X > (Window.ClientBounds.Width - 50))                         
+                            Score(Player);                        
 
                         //rebote paredes verticales, aumenta ligeramente velocidad
-                        if (boundsBall.Center.Y < 50)
-                        {                            
+                        if (boundsBall.Center.Y < 50 || boundsBall.Center.Y > (Window.ClientBounds.Height - 50))                                                  
                             ball.SetSpeed(new Vector2(ball.GetSpeedX(), -(ball.GetSpeedY()) * 1.07f));
-                        }
-                        if (boundsBall.Center.Y > (Window.ClientBounds.Height - 50))
-                        {                           
-                            ball.SetSpeed(new Vector2(ball.GetSpeedX(), -(ball.GetSpeedY()) * 1.07f));
-                        }
-                        
+                                               
                         //si la bola toca al Item
-                        if(boundsBall.Intersects(boundsItem))
-                        {
-                            switch (itemType)
-                            {
-                                case ItemType.DOUBLER:                                    
-                                    ball.LoadContent(Content, "ball02");
-                                    doubler_active = true;                              
-                                    DoublerTimer.Start();
-                                    break;
-                                case ItemType.INVERTER:
-                                    //invertimos controles si el jugador ha sido el ultimo en tocar la bola
-                                    if (player_last_hit)
-                                    {
-                                        inv_controls = true;
-                                        //por si acaso habiamos iniciado antes un InvTimer, reiniciamos el tiempo de invertir
-                                        InvTimer.Stop();
-                                        InvTimer.Start();
-                                    }
-                                    break;
-                                case ItemType.INVISIBILITY:                                    
-                                    if (!player_last_hit)
-                                        Enemy.setVisible(false);
-                                    else
-                                        Player.setVisible(false);                                    
-                                    break;
-                                case ItemType.LARGERBAR:
-                                    if (player_last_hit)
-                                        Player.setLargerBar(1);
-                                    else
-                                        Enemy.setLargerBar(1);                                    
-                                    break;
-                            }
-
-                            //dibujamos el Item fuera de pantalla
-                            positionItem.X = -100;
-                            positionItem.Y = -100;
-                            boundsItem = new BoundingSphere(new Vector3(positionItem.X + (Item.Width / 2), positionItem.Y + (Item.Height / 2), 0), 5);
-                                   
-                            //iniciamos el temporizador para nuevo Item
-                            NewItemTimer.Start();
-                        }
+                        if(boundsBall.Intersects(boundsItem))                        
+                            ManageItem(itemType);
+                        
                         ball.Update(elapsedTime.TotalSeconds);
                         input.Update();
 
@@ -324,32 +240,32 @@ namespace sketchPong
                 case GameState.PAUSE:
                     {
                         //en la pausa, paramos el tiempo
-                        GameTimer.Stop();
+                        EnableAllTimers(false);
                         input.Update();
                         if (input.PressSpace)
-                        {
-                            //Para volver a jugar se deve pulsar P, si se hace con la misma tecla que en GAME da problemas
-                            gameState = GameState.GAME;
-                            //reiniciamos el Timer
-                            GameTimer.Start();
+                        {                            
+                           gameState = GameState.GAME;                           
+                           EnableAllTimers(true);
                         }
                     }break;
                 case GameState.END:
                     {
                         //al terminar paramos el tiempo
-                        GameTimer.Stop();
+                        EnableAllTimers(false);
+                        input.Update();                      
+                      
                         if (input.PressStart)
                         {
+                            gameState = GameState.GAME;
                             //si se quiere volver a jugar, se reinician las variables de juego
-                            //scorePlayer = 0;
+                            EnableAllTimers(true);
                             Player.setScore(0);
                             Enemy.setScore(0);
                             Enemy.setConsecutiveGoals(0);
                             Player.setConsecutiveGoals(0);
                             RealGameTime = 0;
-                            HaveScored = false;
+                            HaveScored = false;                            
                             
-                            gameState = GameState.GAME;
                             GameTimer.Start();
                         }
                     } break;
@@ -358,6 +274,95 @@ namespace sketchPong
             base.Update(gameTime);
         }
 
+        private void EnableAllTimers(bool enable)
+        {
+            if (enable)
+            {
+                GameTimer.Start();
+                GoalTimer.Start();
+                InvTimer.Start();
+                NewItemTimer.Start();
+                DoublerTimer.Start();
+                LargerBarTimer.Start();
+            }
+            else
+            {
+                GameTimer.Stop();
+                GoalTimer.Stop();
+                InvTimer.Stop();
+                NewItemTimer.Stop();
+                DoublerTimer.Stop();
+                LargerBarTimer.Stop();
+            }
+        }
+
+        private void ManageItem(ItemType itemType)
+        {
+            switch (itemType)
+            {
+                case ItemType.DOUBLER:
+                    ball.LoadContent(Content, "ball02");
+                    doubler_active = true;
+                    DoublerTimer.Start();
+                    break;
+                case ItemType.INVERTER:
+                    //invertimos controles si el jugador ha sido el ultimo en tocar la bola
+                    if (player_last_hit)
+                    {
+                        inv_controls = true;
+                        //por si acaso habiamos iniciado antes un InvTimer, reiniciamos el tiempo de invertir
+                        InvTimer.Stop();
+                        InvTimer.Start();
+                    }
+                    break;
+                case ItemType.INVISIBILITY:
+                    if (!player_last_hit)
+                        Enemy.setVisible(false);
+                    else
+                        Player.setVisible(false);
+                    break;
+                case ItemType.LARGERBAR:
+                    if (player_last_hit)
+                        Player.setLargerBar(1);
+                    else
+                        Enemy.setLargerBar(1);
+                    break;
+            }
+
+            //dibujamos el Item fuera de pantalla
+            positionItem.X = -100;
+            positionItem.Y = -100;
+            boundsItem = new BoundingSphere(new Vector3(positionItem.X + (Item.Width / 2), positionItem.Y + (Item.Height / 2), 0), 5);
+
+            //iniciamos el temporizador para nuevo Item
+            NewItemTimer.Start();
+
+        }
+
+        private void Score(Paddle player)
+        {
+            HaveScored = true;
+            GoalTimer.Start();
+
+            //la bola saldra hacia el Player  
+            ball.Reset(true);
+            if (doubler_active)
+                player.IncrementPoints(2);
+            else
+                player.IncrementPoints();
+            if(player.Equals(Player))
+                Enemy.setConsecutiveGoals(0);
+            else
+                Player.setConsecutiveGoals(0);
+
+            //limite de puntos del juego
+            if (player.GetPoints() >= MaximumGoals)
+            {
+                if(player.Equals(Enemy))
+                    player_wins = false;
+                gameState = GameState.END;
+            }
+        }
 
         //funcion para colocar un nuevo item en pantalla
         void PutNewItem()
@@ -378,6 +383,8 @@ namespace sketchPong
                     Item = Content.Load<Texture2D>("growbar");
                     break;
             }
+           
+
             positionItem = new Vector2(rand.Next(100, 1100), rand.Next(150, 600));
             boundsItem = new BoundingSphere(new Vector3(positionItem.X + (Item.Width / 2), positionItem.Y + (Item.Height / 2), 0), 6);
         }
@@ -406,76 +413,16 @@ namespace sketchPong
                          } break;
                     case GameState.GAME: 
                          {
-                             spriteBatch.Draw(background, new Vector2(0, 0), Color.Beige);
-                             spriteBatch.Draw(frontend, new Vector2(0, 0), Color.White);
-                           
-                             if(HaveScored)
-                                 spriteBatch.DrawString(gamefont, "Goal!", positionMessage, Color.Orange);
-
-                             spriteBatch.DrawString(gamefont, Player.GetPoints().ToString() + " - " + Enemy.GetPoints().ToString(), positionScore, Color.Black);
-                          
-                             if(RealGameTime%60>9)
-                             spriteBatch.DrawString(gamefont,"  0"+ (RealGameTime/60).ToString() + ":" + (RealGameTime%60).ToString(), positionTime, Color.Blue);
-                             else
-                                 spriteBatch.DrawString(gamefont, "  0" + (RealGameTime / 60).ToString() + ":0" + (RealGameTime % 60).ToString(), positionTime, Color.Blue);
-                              
-                             Player.Draw(spriteBatch);                      
-
-                             Enemy.Draw(spriteBatch);
-
-                             //dibujamos la bola de Item para invertir controles
-                             spriteBatch.Draw(Item, positionItem, Color.White);
-
-                             //spriteBatch.Draw(ball, positionBall, Color.White);
-                             ball.Draw(spriteBatch);
+                             DrawMainElements();
                          } break;
                     case GameState.PAUSE:
                         {
-                            //tot igual que a game, menos el temps i lo final
-                            spriteBatch.Draw(background, new Vector2(0, 0), Color.Beige);
-                            spriteBatch.Draw(frontend, new Vector2(0, 0), Color.White);
-                            
-                            if (HaveScored)
-                                spriteBatch.DrawString(gamefont, "Goal!", positionMessage, Color.Orange);
-
-                            spriteBatch.DrawString(gamefont, Player.GetPoints().ToString() + " - " + Enemy.GetPoints().ToString(), positionScore, Color.Black);
-
-                            if (RealGameTime % 60 > 9)
-                                spriteBatch.DrawString(gamefont, "  0" + (RealGameTime / 60).ToString() + ":" + (RealGameTime % 60).ToString(), positionTime, Color.Blue);
-                            else
-                                spriteBatch.DrawString(gamefont, "  0" + (RealGameTime / 60).ToString() + ":0" + (RealGameTime % 60).ToString(), positionTime, Color.Blue);
-
-                            Player.Draw(spriteBatch);
-                            Enemy.Draw(spriteBatch);
-                
-                            //dibujamos la bola de Item para invertir controles
-                            spriteBatch.Draw(Item, positionItem, Color.White);
-                            //spriteBatch.Draw(ball, positionBall, Color.White);
-                            ball.Draw(spriteBatch);
+                            DrawMainElements();
 
                             spriteBatch.DrawString(gamefont, "PAUSE!", positionPause, Color.Red);
                         }break;                        
                     case GameState.END: {
-
-                        spriteBatch.Draw(background, new Vector2(0, 0), Color.Beige);
-                        spriteBatch.Draw(frontend, new Vector2(0, 0), Color.White);
-
-                        if (HaveScored)
-                            spriteBatch.DrawString(gamefont, "Goal!", positionMessage, Color.Orange);
-
-                        spriteBatch.DrawString(gamefont, Player.GetPoints().ToString() + " - " + Enemy.GetPoints().ToString(), positionScore, Color.Black);
-
-                        if (RealGameTime % 60 > 9)
-                            spriteBatch.DrawString(gamefont, "  0" + (RealGameTime / 60).ToString() + ":" + (RealGameTime % 60).ToString(), positionTime, Color.Blue);
-                        else
-                            spriteBatch.DrawString(gamefont, "  0" + (RealGameTime / 60).ToString() + ":0" + (RealGameTime % 60).ToString(), positionTime, Color.Blue);
-                        
-                        //spriteBatch.Draw(ball, positionBall, Color.White);
-                        Player.Draw(spriteBatch);
-                        Enemy.Draw(spriteBatch);
-                        ball.Draw(spriteBatch);
-
-                        spriteBatch.Draw(Item, positionItem, Color.White);
+                        DrawMainElements();
                         if(player_wins)
                            spriteBatch.DrawString(gamefont, "Player Wins!", positionWinnerMessage, Color.Red);
                         else
@@ -491,8 +438,29 @@ namespace sketchPong
 
             base.Draw(gameTime);
         }
+
+        void DrawMainElements()
+        {
+            spriteBatch.Draw(background, new Vector2(0, 0), Color.Beige);
+            spriteBatch.Draw(frontend, new Vector2(0, 0), Color.White);
+
+            if (HaveScored)
+                spriteBatch.DrawString(gamefont, "Goal!", positionMessage, Color.Orange);
+
+            spriteBatch.DrawString(gamefont, Player.GetPoints().ToString() + " - " + Enemy.GetPoints().ToString(), positionScore, Color.Black);
+
+            if (RealGameTime % 60 > 9)
+                spriteBatch.DrawString(gamefont, "  0" + (RealGameTime / 60).ToString() + ":" + (RealGameTime % 60).ToString(), positionTime, Color.Blue);
+            else
+                spriteBatch.DrawString(gamefont, "  0" + (RealGameTime / 60).ToString() + ":0" + (RealGameTime % 60).ToString(), positionTime, Color.Blue);
+            
+            Player.Draw(spriteBatch);
+            Enemy.Draw(spriteBatch);
         
-        
+            spriteBatch.Draw(Item, positionItem, Color.White);            
+            ball.Draw(spriteBatch);
+        }
+         
 
         //funciones para cuando terminan los diferentes timers
         void LargerBarTimer_Elapsed(object sender, ElapsedEventArgs e)
@@ -550,7 +518,8 @@ namespace sketchPong
             ball.LoadContent(Content, "ball01");
             //****************************************
 
-            boundsItem = new BoundingSphere(new Vector3(positionItem.X + (Item.Width / 2), positionItem.Y + (Item.Height / 2), 0), 5);
+            boundsItem = new BoundingSphere(new Vector3(positionItem.X + (Item.Width / 2), 
+                                            positionItem.Y + (Item.Height / 2), 0), 5);
 
         }
         
