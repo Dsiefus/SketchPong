@@ -177,69 +177,11 @@ namespace sketchPong
                     } break;
                 case GameState.GAME: 
                     {
-                        
-                        if(PlayerMovingUp(keyState))
-                            Player.MoveUp(elapsedTime.TotalSeconds);
-                        if(PlayerMovingDown(keyState))
-                            Player.MoveDown(elapsedTime.TotalSeconds);
-                         
-                        //Si la bola esta acercandose al enemigo y a cierta distancia, activamos la IA del enemigo
-                        if (ball.GetPosition().X > 600 && ball.GetSpeed().X>0)
-                            Enemy.EnemyIA(ball,elapsedTime.TotalSeconds,Window.ClientBounds.Width,Window.ClientBounds.Height);
-                        //si la bola va hacia el jugador, vuelve a la posicion central
-                        if (ball.GetSpeedX() < 0)
-                             Enemy.GoToCenter(elapsedTime.TotalSeconds, frontend);
-
-                       boundsPlayer = Player.GetBoundingBox();
-                       boundsEnemy = Enemy.GetBoundingBox();
-                       boundsBall = ball.getBoundingSphere();
-
-                        if (boundsPlayer.Intersects(boundsBall))
-                        {  
-                            ball.MoveToRight();
-                            //aumentar la velocidad en el eje Y en la direccion del movimiento de la barra
-                            
-                            if (PlayerMovingUp(keyState))                                 
-                                ball.IncreaseSpeed(new Vector2(0, - Math.Max(Math.Abs(ball.GetSpeedY()) * 0.2f, 0.3f)));
-                            if (PlayerMovingDown(keyState))
-                                ball.IncreaseSpeed(new Vector2(0, Math.Max(Math.Abs(ball.GetSpeedY()) * 0.2f, 0.3f)));
-                         
-                            player_last_hit = true; //player ultimo en golpear
-                        }                     
-                        
-                        if (boundsEnemy.Intersects(boundsBall))
-                        {                            
-                            ball.MoveToLeft();
-                            player_last_hit = false;
-                        }
-
-                        //gol del enemigo
-                        if (boundsBall.Center.X < 50)
-                            Score(Enemy);
-                                             
-                        //gol del jugador
-                        if (boundsBall.Center.X > (Window.ClientBounds.Width - 50))                         
-                            Score(Player);                        
-
-                        //rebote paredes verticales, aumenta ligeramente velocidad
-                        if (boundsBall.Center.Y < 50 || boundsBall.Center.Y > (Window.ClientBounds.Height - 50))                                                  
-                            ball.SetSpeed(new Vector2(ball.GetSpeedX(), -(ball.GetSpeedY()) * 1.07f));
-                                               
-                        //si la bola toca al Item
-                        if(boundsBall.Intersects(boundsItem))                        
-                            ManageItem(itemType);
-                        
-                        ball.Update(elapsedTime.TotalSeconds);
-                        input.Update();
-
-                        //apretar Espacio para pausa
-                        if (input.PressSpace)
-                               gameState = GameState.PAUSE;
+                        UpdateGame(ref elapsedTime, ref keyState);
                     } break;
 
                 case GameState.PAUSE:
-                    {
-                        //en la pausa, paramos el tiempo
+                    {                        
                         EnableAllTimers(false);
                         input.Update();
                         if (input.PressSpace)
@@ -249,29 +191,101 @@ namespace sketchPong
                         }
                     }break;
                 case GameState.END:
-                    {
-                        //al terminar paramos el tiempo
+                    {                        
                         EnableAllTimers(false);
                         input.Update();                      
-                      
-                        if (input.PressStart)
-                        {
-                            gameState = GameState.GAME;
-                            //si se quiere volver a jugar, se reinician las variables de juego
-                            EnableAllTimers(true);
-                            Player.setScore(0);
-                            Enemy.setScore(0);
-                            Enemy.setConsecutiveGoals(0);
-                            Player.setConsecutiveGoals(0);
-                            RealGameTime = 0;
-                            HaveScored = false;                            
-                            
-                            GameTimer.Start();
-                        }
+                        if (input.PressStart)                                                                              
+                            RestartGame();              
+                        
                     } break;
                 default: break;
             }
             base.Update(gameTime);
+        }
+
+        private void UpdateGame(ref TimeSpan elapsedTime, ref KeyboardState keyState)
+        {
+            MovePlayer(ref elapsedTime, ref keyState);
+            MoveEnemy(elapsedTime);
+
+            UpdateBounds();
+            CheckIntersections(keyState);
+
+            if (boundsBall.Center.X < 50)
+                Score(Enemy);
+           
+            if (boundsBall.Center.X > (Window.ClientBounds.Width - 50))
+                Score(Player);          
+
+            ball.Update(elapsedTime.TotalSeconds);
+            input.Update();
+            
+            if (input.PressSpace)
+                gameState = GameState.PAUSE;
+        }
+
+        private void MoveEnemy(TimeSpan elapsedTime)
+        {
+            if (ball.GetPosition().X > 600 && ball.GetSpeed().X > 0)
+                Enemy.EnemyIA(ball, elapsedTime.TotalSeconds, Window.ClientBounds.Width, Window.ClientBounds.Height);
+            if (ball.GetSpeedX() < 0)
+                Enemy.GoToCenter(elapsedTime.TotalSeconds, frontend);
+           
+        }
+
+        private void MovePlayer(ref TimeSpan elapsedTime, ref KeyboardState keyState)
+        {
+            if (PlayerMovingUp(keyState))
+                Player.MoveUp(elapsedTime.TotalSeconds);
+            if (PlayerMovingDown(keyState))
+                Player.MoveDown(elapsedTime.TotalSeconds);
+        }
+
+        private void CheckIntersections(KeyboardState keyState)
+        {
+            if (boundsPlayer.Intersects(boundsBall))
+            {
+                ball.MoveToRight();
+                //aumentar la velocidad en el eje Y en la direccion del movimiento de la barra
+                if (PlayerMovingUp(keyState))
+                    ball.IncreaseSpeed(new Vector2(0, -Math.Max(Math.Abs(ball.GetSpeedY()) * 0.2f, 0.3f)));
+                if (PlayerMovingDown(keyState))
+                    ball.IncreaseSpeed(new Vector2(0, Math.Max(Math.Abs(ball.GetSpeedY()) * 0.2f, 0.3f)));
+
+                player_last_hit = true; //player ultimo en golpear
+            }
+
+            if (boundsEnemy.Intersects(boundsBall))
+            {
+                ball.MoveToLeft();
+                player_last_hit = false;
+            }
+
+            if (boundsBall.Center.Y < 50 || boundsBall.Center.Y > (Window.ClientBounds.Height - 50))
+                ball.SetSpeed(new Vector2(ball.GetSpeedX(), -(ball.GetSpeedY()) * 1.07f));
+
+            if (boundsBall.Intersects(boundsItem))
+                ManageItem(itemType);
+            
+        }
+
+        private void UpdateBounds()
+        {
+            boundsPlayer = Player.GetBoundingBox();
+            boundsEnemy = Enemy.GetBoundingBox();
+            boundsBall = ball.getBoundingSphere();
+        }
+
+        private void RestartGame()
+        {
+            gameState = GameState.GAME; 
+            EnableAllTimers(true);
+            Player.setScore(0);
+            Enemy.setScore(0);
+            Enemy.setConsecutiveGoals(0);
+            Player.setConsecutiveGoals(0);
+            RealGameTime = 0;
+            HaveScored = false;
         }
 
         private void EnableAllTimers(bool enable)
@@ -358,8 +372,9 @@ namespace sketchPong
             //limite de puntos del juego
             if (player.GetPoints() >= MaximumGoals)
             {
-                if(player.Equals(Enemy))
-                    player_wins = false;
+                if (player.Equals(Player))
+                    player_wins = true;
+               
                 gameState = GameState.END;
             }
         }
@@ -470,8 +485,7 @@ namespace sketchPong
         }
 
         void DoublerTimer_Elapsed(object sender, ElapsedEventArgs e)
-        {
-            //al terminar tiempo de valor doble de puntos, volvemos a poner la textura original y quitamos el bonus
+        {            
             ball.LoadContent(Content, "ball01");
             doubler_active = false;
         }

@@ -158,58 +158,58 @@ namespace sketchPong
         
         public void EnemyIA(Ball ball,double elapsedTime,float Width, float Height)
         {
-        BoundingSphere boundsBall;
+            BoundingSphere boundsBall;
 
-        boundsBall= ball.getBoundingSphere();
-            //si la bola esta por encima o debajo de la barra, empezar a seguir la bola
-            if (!search_ball) 
-                if (boundsBall.Center.Y < (bounds.Min.Y) || boundsBall.Center.Y > (bounds.Max.Y))
-                    search_ball = true;
-
+            boundsBall= ball.getBoundingSphere();
+               
+            if (!search_ball && (boundsBall.Center.Y < (bounds.Min.Y) || boundsBall.Center.Y > (bounds.Max.Y)))                 
+                        search_ball = true;
             
             if (search_ball) //solo se empieza a mover un poco antes de la mitad del campo
             {
-                         //variable temporal para ver datos en pantalla   
-                float modifier;
-
-                modifier = (float)(ball.GetPosition().X /Width) + 0.5f;
-                /*    
-                 * modificador/multiplicador de la velocidad de la barra del ordenador:
-                 * dist% + 30%               
-                 * if distY> 150, speed+(30~40%)
-                 * if > 200, +40%
-                 * if > 250, +70%
-                 * if ball is up and move up, +20%
-                 * MaxSpeed: teoric = x3, real minX.5
-                 */
-
-                //bola arriba
-                if (boundsBall.Center.Y < ((((bounds.Max.Y + bounds.Min.Y) / 2))) && (bounds.Min.Y > 50))
-                {
-                   // enemy_moving_up = true;
-                    modifier = CalculateModifier(ball, Width, ((bounds.Min.Y + 50) - boundsBall.Center.Y));
-                    
+                           
+                float modifier = (float)(ball.GetPosition().X /Width) + 0.5f; 
+                
+                if (BallIsUp(ref boundsBall))
+                {                   
+                    modifier = CalculateModifier(ball, Width, ((bounds.Min.Y + 50) - boundsBall.Center.Y));                    
                     if (ball.GetSpeed().Y < 0)
-                        modifier += 0.2f;
-                    
+                        modifier += 0.2f;                    
                     this.MoveUp(modifier * elapsedTime);
                 }
-                else //bola abajo
-                    if (boundsBall.Center.Y > ((bounds.Max.Y + bounds.Min.Y) / 2) && (bounds.Max.Y < (Height - 40)))
-                    {
-                        modifier = CalculateModifier(ball, Width, boundsBall.Center.Y - (bounds.Max.Y - 50));
-                        
-                        if (ball.GetSpeed().Y > 0)
-                            modifier += 0.2f;
-                        
-                        this.MoveDown(modifier * elapsedTime);
-                    }
+               
+                if (BallIsDown(Height, ref boundsBall))
+                {
+                    modifier = CalculateModifier(ball, Width, boundsBall.Center.Y - (bounds.Max.Y - 50));                        
+                    if (ball.GetSpeed().Y > 0)
+                        modifier += 0.2f;                        
+                    this.MoveDown(modifier * elapsedTime);
+                }
 
                 if (Math.Abs(boundsBall.Center.Y - ((bounds.Max.Y + bounds.Min.Y) / 2)) < 20)
                     search_ball = false;
             }           
         }
 
+        private bool BallIsDown(float Height, ref BoundingSphere boundsBall)
+        {
+            return boundsBall.Center.Y > ((bounds.Max.Y + bounds.Min.Y) / 2) && (bounds.Max.Y < (Height - 40));
+        }
+
+        private bool BallIsUp(ref BoundingSphere boundsBall)
+        {
+            return boundsBall.Center.Y < ((((bounds.Max.Y + bounds.Min.Y) / 2))) && (bounds.Min.Y > 50);
+        }
+
+        /*    
+        * modificador/multiplicador de la velocidad de la barra del ordenador:
+        * dist% + 30%               
+        * if distY> 150, speed+(30~40%)
+        * if > 200, +40%
+        * if > 250, +70%
+        * if ball is up and move up, +20%
+        * MaxSpeed: teoric = x3, real minX.5
+        */
         private float CalculateModifier(Ball ball,float Width, float absoluteDist)
         {
             float modifier = (float)(ball.GetPosition().X / Width) + 0.3f;
@@ -220,8 +220,7 @@ namespace sketchPong
                 modifier += 0.4f;
 
             if (absoluteDist > 250)
-                modifier += 0.7f;          
-
+                modifier += 0.7f; 
 
             return modifier;
 

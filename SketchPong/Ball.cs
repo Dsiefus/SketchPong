@@ -17,7 +17,7 @@ namespace sketchPong
         private BoundingSphere bounds;
 
         private Timer rotate;
-        public float rotation;
+        private float rotation;
 
         private bool isVisible;
         Random rand;
@@ -35,7 +35,7 @@ namespace sketchPong
             rotate.Start();
         }
 
-        void rotate_Elapsed(object sender, ElapsedEventArgs e)
+        private void rotate_Elapsed(object sender, ElapsedEventArgs e)
         {
             rotation +=  0.10471976f;
             if (rotation >= Math.PI * 2)
